@@ -16,11 +16,7 @@ test('catalogued free news URLs fit the build budget and have collision-free pat
 
 test('free deployment excludes server functions and serves snapshots as inert content', () => {
   const config = JSON.parse(readFileSync(new URL('../vercel.json', import.meta.url), 'utf8'));
-  const ignored = readFileSync(new URL('../.vercelignore', import.meta.url), 'utf8');
-  assert.match(ignored, /^api\/\*\*\/\*\.js$/m);
-  assert.match(ignored, /^api\/\*\*\/\*\.ts$/m);
-  assert.match(ignored, /^!api\/\*\*\/_\*\.js$/m);
-  assert.match(ignored, /^middleware\.ts$/m);
+  assert.deepEqual(config.builds, [{ src: "package.json", use: "@vercel/static-build", config: { distDir: "dist" } }]);
   assert.ok(!config.rewrites.some((rule: { destination: string }) => rule.destination.startsWith('/api/')));
   const headers = config.headers.find((rule: { source: string }) => rule.source === '/free-data/news/(.*)').headers;
   assert.ok(headers.some((header: { key: string; value: string }) => header.key === 'Content-Type' && header.value.startsWith('text/plain')));
