@@ -25,11 +25,4 @@ target/
 # Guarded by tests/deploy-config.test.mjs.
 api/**/*.test.mjs
 
-# This fork deploys only the free static dashboard. Backend source stays in Git.
-api/**/*.js
-api/**/*.ts
-api/**/*.mjs
-api/**/*.mts
-!api/**/_*.js
-!api/**/_*.ts
-middleware.ts
+# Explicit static builder in vercel.json excludes API deployment.

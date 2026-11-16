@@ -1,6 +1,4 @@
 {
-  "buildCommand": "node --import tsx scripts/build-free-snapshots.mts && npm run security:vite-env-secrets -- --strict-local && npm run typecheck && npm run lint:boundaries && npx cross-env VITE_VARIANT=full VITE_FREE_HOSTING=true vite build",
-  "outputDirectory": "dist",
   "ignoreCommand": "bash scripts/vercel-ignore.sh",
   "redirects": [
     {
@@ -66,6 +64,15 @@
           "value": "default-src 'none'; sandbox"
         }
       ]
+    }
+  ],
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
     }
   ]
 }

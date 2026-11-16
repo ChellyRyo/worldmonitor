@@ -245,7 +245,8 @@
     "legal:pdfs:check": "node scripts/build-legal-pdfs.mjs --check",
     "docs:dates": "node scripts/generate-docs-page-dates.mjs",
     "docs:dates:check": "node scripts/generate-docs-page-dates.mjs --check",
-    "freeze:github-stars": "node scripts/freeze-github-stars.mjs"
+    "freeze:github-stars": "node scripts/freeze-github-stars.mjs",
+    "vercel-build": "node --import tsx scripts/build-free-snapshots.mts && npm run security:vite-env-secrets -- --strict-local && npm run typecheck && npm run lint:boundaries && npx cross-env VITE_VARIANT=full VITE_FREE_HOSTING=true vite build"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
