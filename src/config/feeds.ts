@@ -1,4 +1,6 @@
 import type { Feed } from '@/types';
+import { FREE_HOSTING } from './free-hosting';
+import { FREE_NEWS_FEEDS_PER_CATEGORY } from '../../shared/free-hosting';
 import { SITE_VARIANT } from './variant';
 import { rssProxyUrl } from '@/utils';
 import { mergeCanonicalFeeds } from './feed-resolution';
@@ -34,7 +36,7 @@ export function digestEditionsFor(category: string): string[] {
 
 function browserFeeds(edition: string): Record<string, Feed[]> {
   return Object.fromEntries(
-    Object.entries(browserCategoryFeeds(BROWSER_CATALOG, edition)).map(([category, feeds]) => [category, feeds.map(proxied)]),
+    Object.entries(browserCategoryFeeds(BROWSER_CATALOG, edition)).map(([category, feeds]) => [category, (FREE_HOSTING ? feeds.slice(0, FREE_NEWS_FEEDS_PER_CATEGORY) : feeds).map(proxied)]),
   );
 }
 
