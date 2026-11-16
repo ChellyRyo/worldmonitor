@@ -1,4 +1,5 @@
 import { isDesktopRuntime, toApiUrl } from '@/services/runtime';
+import { FREE_HOSTING } from '@/config/free-hosting';
 
 /**
  * Starts the fast bootstrap tier from the dashboard entry script, before the
@@ -23,6 +24,7 @@ interface PrimedTier {
 let primed: PrimedTier | null = null;
 
 export function primeBootstrapFastTier(): void {
+  if (FREE_HOSTING) return;
   if (primed || typeof fetch !== 'function') return;
   // Desktop waits for its local sidecar before bootstrap; offline boots read
   // the cached tier instead of the network.

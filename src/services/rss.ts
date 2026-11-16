@@ -1,4 +1,5 @@
 import type { Feed, NewsItem } from '@/types';
+import { FREE_HOSTING } from '@/config/free-hosting';
 import { SITE_VARIANT } from '@/config';
 import { chunkArray, fetchWithProxy, hasNoStoreCacheDirective, isMobileDevice } from '@/utils';
 import { classifyByKeyword, classifyWithAI } from './threat-classifier';
@@ -23,8 +24,8 @@ export interface RssFetchPolicy {
 
 export const DEFAULT_RSS_FETCH_POLICY: RssFetchPolicy = Object.freeze({
   ingestGlobalTrends: true,
-  ingestVectorMemory: true,
-  classifyWithAi: true,
+  ingestVectorMemory: !FREE_HOSTING,
+  classifyWithAi: !FREE_HOSTING,
 });
 
 export const BRIEF_ONLY_RSS_FETCH_POLICY: RssFetchPolicy = Object.freeze({

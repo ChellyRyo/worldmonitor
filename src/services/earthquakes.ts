@@ -1,4 +1,5 @@
 import { getRpcBaseUrl } from '@/services/rpc-client';
+import { FREE_HOSTING } from '@/config/free-hosting';
 import type { Earthquake as ProtoEarthquake, ListEarthquakesResponse } from '@/generated/client/worldmonitor/seismology/v1/service_client';
 import { createCircuitBreaker } from '@/utils/circuit-breaker';
 import { getHydratedData } from '@/services/bootstrap';
@@ -24,6 +25,21 @@ const emptyFallback: ListEarthquakesResponse = { earthquakes: [] };
 const EARTHQUAKE_REQUEST_TIMEOUT_MS = 10_000;
 
 export async function fetchEarthquakes(): Promise<Earthquake[]> {
+  if (FREE_HOSTING) {
+    const response = await fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson', {
+      credentials: 'omit', signal: AbortSignal.timeout(EARTHQUAKE_REQUEST_TIMEOUT_MS),
+    });
+    if (!response.ok) throw new Error(`USGS HTTP ${response.status}`);
+    const data = await response.json();
+    return (data.features ?? []).filter((feature: { geometry?: { coordinates?: number[] } }) =>
+      feature.geometry?.coordinates?.length === 3 && feature.geometry.coordinates.every(Number.isFinite)
+    ).map((feature: { id: string; geometry: { coordinates: number[] }; properties: { place: string; mag: number; time: number; url: string } }) => ({
+      id: feature.id, place: feature.properties.place, magnitude: feature.properties.mag,
+      depthKm: feature.geometry.coordinates[2],
+      location: { latitude: feature.geometry.coordinates[1], longitude: feature.geometry.coordinates[0] },
+      occurredAt: feature.properties.time, sourceUrl: feature.properties.url, source: 'usgs', category: 'earthquake',
+    }));
+  }
   const hydrated = getHydratedData('earthquakes') as ListEarthquakesResponse | undefined;
   if (hydrated?.earthquakes?.length) {
     breaker.recordSuccess(hydrated);

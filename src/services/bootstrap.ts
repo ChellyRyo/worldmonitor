@@ -1,4 +1,5 @@
 import { getPersistentCache, setPersistentCache } from '@/services/persistent-cache';
+import { FREE_HOSTING } from '@/config/free-hosting';
 import { isDesktopRuntime, toApiUrl } from '@/services/runtime';
 import { adoptPrimedBootstrapTier, primedBootstrapTierBudgetUsedMs, resetPrimedBootstrapTierForTests } from '@/services/bootstrap-prefetch';
 import {
@@ -594,6 +595,7 @@ export function cancelBootstrapSlowTier(): void {
  * is read via a one-shot snapshot, with no reactive emitter, so a passive update is invisible.
  */
 export async function fetchBootstrapData(onSlowSettled?: () => void): Promise<void> {
+  if (FREE_HOSTING) return;
   const generation = ++bootstrapGeneration;
   const isCurrentGeneration = (): boolean => generation === bootstrapGeneration;
 
