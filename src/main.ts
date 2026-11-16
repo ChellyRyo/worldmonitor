@@ -1,5 +1,6 @@
 import './styles/base-layer.css';
 import './bootstrap/zod-csp';
+import './bootstrap/free-hosting';
 import './bootstrap/abort-signal-fallbacks';
 import './bootstrap/dom-fallbacks';
 import { initPwaInstall } from '@/services/pwa-install';

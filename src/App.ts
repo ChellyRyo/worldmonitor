@@ -201,6 +201,7 @@ import { getWebMcpAccessContext, openWebMcpSignIn } from '@/app/webmcp-access';
 import { runDashboardActionBinding } from '@/app/dashboard-action-binding';
 import { selectWebMcpPanelTab } from '@/app/webmcp-panel-tab-binding';
 import { refreshDataFreshnessFromHealth } from '@/services/health-freshness';
+import { FREE_HOSTING } from '@/config/free-hosting';
 import { scheduleAfterFirstPaint } from '@/utils/after-paint';
 import type { SearchManager } from '@/app/search-manager';
 import { RefreshScheduler } from '@/app/refresh-scheduler';
@@ -2027,6 +2028,7 @@ export class App {
   }
 
   private async loadInitialCorrelationEngine(): Promise<void> {
+    if (FREE_HOSTING) return;
     try {
       const {
         CorrelationEngine,
@@ -4021,6 +4023,10 @@ export class App {
   }
 
   private setupRefreshIntervals(): void {
+    if (FREE_HOSTING) {
+      this.refreshScheduler.scheduleRefresh('natural', () => this.dataLoader.loadNatural(), REFRESH_INTERVALS.natural, () => this.state.mapLayers.natural);
+      return;
+    }
     // Always refresh news for all variants
     this.refreshScheduler.scheduleRefresh('news', () => this.dataLoader.loadNews(), REFRESH_INTERVALS.feeds);
     // Registration (and its immediate first hydration) is deferred to

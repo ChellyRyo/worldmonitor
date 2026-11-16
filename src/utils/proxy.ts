@@ -1,6 +1,8 @@
 import { isDesktopRuntime, toApiUrl, toRuntimeUrl } from '../services/runtime';
 import { getPersistentCache, setPersistentCache } from '../services/persistent-cache';
 import { createRequestTimeoutSignal } from '../services/timeout-signal';
+import { FREE_HOSTING } from '../config/free-hosting';
+import { newsSnapshotPath } from '../../shared/free-hosting';
 
 const isDev = import.meta.env.DEV;
 const RESPONSE_CACHE_PREFIX = 'api-response:';
@@ -35,6 +37,7 @@ export function widgetAgentHealthUrl(): string {
 }
 
 export function rssProxyUrl(feedUrl: string): string {
+  if (FREE_HOSTING) return newsSnapshotPath(feedUrl);
   // Desktop fetches through the sidecar's rss-proxy. The WebView cannot read
   // publisher feeds directly (CORS), and the relay's CORS excludes tauri://.
   if (isDesktopRuntime()) return `/api/rss-proxy?url=${encodeURIComponent(feedUrl)}`;

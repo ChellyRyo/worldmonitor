@@ -1,5 +1,6 @@
 import type { PanelConfig, MapLayers, DataSourceId } from '@/types';
 import { SITE_VARIANT } from './variant';
+import { FREE_HOSTING } from './free-hosting';
 // boundary-ignore: isDesktopRuntime is a pure env probe with no service dependencies
 import { isDesktopRuntime } from '@/services/runtime';
 // boundary-ignore: getSecretState is a pure env/keychain probe with no service dependencies
@@ -8,6 +9,7 @@ import { getSecretState } from '@/services/runtime-config';
 import { isEntitled } from '@/services/entitlements';
 
 const _desktop = isDesktopRuntime();
+const FREE_PANEL_KEYS = ['map', 'politics', 'us', 'europe', 'middleeast', 'asia', 'tech', 'science', 'world-clock'];
 
 // Iran-events domain sunset (war ended 2026-07). Default OFF: iranAttacks is
 // disabled in every variant default so DEFAULT_MAP_LAYERS agrees with the gated
@@ -1243,7 +1245,7 @@ export function getEffectivePanelConfig(key: string, variant: string): PanelConf
   const base = getVariantPanelConfigs(variant)?.[key] ?? ALL_PANELS[key];
   if (!base) return { name: key, enabled: false, priority: 2 };
   const override = VARIANT_PANEL_OVERRIDES[variant]?.[key] ?? {};
-  return { ...base, ...override };
+  return { ...base, ...override, ...(FREE_HOSTING ? { enabled: FREE_PANEL_KEYS.includes(key) } : {}) };
 }
 
 /**
@@ -1253,7 +1255,7 @@ export function getEffectivePanelConfig(key: string, variant: string): PanelConf
  * variant-realistic state without duplicating App's merge formula.
  */
 export function getInitialPanelSettingsForVariant(variant: string): Record<string, PanelConfig> {
-  const variantDefaults = new Set(VARIANT_DEFAULTS[variant] ?? VARIANT_DEFAULTS.full ?? []);
+  const variantDefaults = new Set(FREE_HOSTING ? FREE_PANEL_KEYS : VARIANT_DEFAULTS[variant] ?? VARIANT_DEFAULTS.full ?? []);
   return Object.fromEntries(
     Object.keys(ALL_PANELS).map((key) => {
       const config = getEffectivePanelConfig(key, variant);
@@ -1463,12 +1465,16 @@ export function shouldDeferFreeTierEnforcement(
 // VARIANT-AWARE EXPORTS
 // ============================================
 export const DEFAULT_PANELS: Record<string, PanelConfig> = Object.fromEntries(
-  (VARIANT_DEFAULTS[SITE_VARIANT] ?? VARIANT_DEFAULTS['full'] ?? []).map(key =>
+  (FREE_HOSTING ? FREE_PANEL_KEYS : VARIANT_DEFAULTS[SITE_VARIANT] ?? VARIANT_DEFAULTS['full'] ?? []).map(key =>
     [key, getEffectivePanelConfig(key, SITE_VARIANT)]
   )
 );
 
-export const DEFAULT_MAP_LAYERS = SITE_VARIANT === 'happy'
+const FREE_MAP_LAYERS = Object.fromEntries(Object.keys(FULL_MAP_LAYERS).map(key =>
+  [key, ['natural', 'dayNight'].includes(key)]
+)) as unknown as MapLayers;
+
+export const DEFAULT_MAP_LAYERS = FREE_HOSTING ? FREE_MAP_LAYERS : SITE_VARIANT === 'happy'
   ? HAPPY_MAP_LAYERS
   : SITE_VARIANT === 'tech'
     ? TECH_MAP_LAYERS
@@ -1480,7 +1486,7 @@ export const DEFAULT_MAP_LAYERS = SITE_VARIANT === 'happy'
           ? ENERGY_MAP_LAYERS
           : FULL_MAP_LAYERS;
 
-export const MOBILE_DEFAULT_MAP_LAYERS = SITE_VARIANT === 'happy'
+export const MOBILE_DEFAULT_MAP_LAYERS = FREE_HOSTING ? FREE_MAP_LAYERS : SITE_VARIANT === 'happy'
   ? HAPPY_MOBILE_MAP_LAYERS
   : SITE_VARIANT === 'tech'
     ? TECH_MOBILE_MAP_LAYERS

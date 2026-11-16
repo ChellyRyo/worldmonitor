@@ -168,3 +168,5 @@ src-tauri/notices/*
 !src-tauri/notices/.gitkeep
 
 !vendor/vercel-og/dist/
+# Generated public RSS deployment snapshots
+/public/free-data/

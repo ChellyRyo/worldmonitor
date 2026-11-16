@@ -1,4 +1,5 @@
 import type { AppContext, AppModule } from '@/app/app-context';
+import { FREE_HOSTING } from '@/config/free-hosting';
 import { enqueueSentryCall } from '@/bootstrap/sentry-defer';
 import { isAnalyticsHost, track } from '@/services/analytics';
 import { isPageUnloading } from '@/bootstrap/page-unload-signal';
@@ -1227,6 +1228,13 @@ export class DataLoaderManager implements AppModule {
   }
 
   private async runLoadAllData(forceAll: boolean, trigger: LoadAllDataTrigger = 'full'): Promise<void> {
+    if (FREE_HOSTING) {
+      await Promise.all([
+        this.wantsNewsHydration(forceAll) ? this.newsHydrationTask(forceAll) : Promise.resolve(),
+        this.ctx.mapLayers.natural ? this.loadNatural() : Promise.resolve(),
+      ]);
+      return;
+    }
     const runGuarded = async (name: string, fn: () => Promise<void>): Promise<void> => {
       if (this.ctx.isDestroyed || this.ctx.inFlight.has(name)) return;
       this.ctx.inFlight.add(name);
@@ -1808,6 +1816,14 @@ export class DataLoaderManager implements AppModule {
     generation = this.newsLoadGeneration,
     recordSelectedFreshness: (servedStale: boolean) => void = () => undefined,
   ): Promise<NewsItem[]> {
+    if (FREE_HOSTING) {
+      const { fetchCategoryFeeds } = await getRssModule();
+      const items = await fetchCategoryFeeds((feeds ?? []).filter(f => !this.ctx.disabledSources.has(f.name)), { batchSize: 6 });
+      recordSelectedFreshness(true);
+      this.setNewsRefreshDegraded(category, true);
+      this.renderNewsForCategory(category, items);
+      return items;
+    }
     try {
       const digest = digestSelection?.digest;
       const digestServedStale = digestSelection?.servedStale ?? true;
@@ -2211,11 +2227,12 @@ export class DataLoaderManager implements AppModule {
    * `isCustom` and read from the editions that carry them in loadNewsCategory().
    */
   private resolveEnabledNewsCategories(): ResolvedCategory[] {
-    return resolveNewsCategories(
+    const categories = resolveNewsCategories(
       FEEDS,
       CANONICAL_FEEDS,
       enabledNewsCategoryKeys(this.ctx.newsCategoryPanelKeys, this.ctx.panelSettings),
     );
+    return FREE_HOSTING ? categories.filter(category => this.ctx.panelSettings[category.key]?.enabled) : categories;
   }
 
   /**
@@ -2417,7 +2434,7 @@ export class DataLoaderManager implements AppModule {
 
     // Fire digest fetch early, but do not let a slow digest stall the category
     // first paint. Fast digests still take the optimized digest-backed path.
-    const digestPromise = this.tryFetchDigest().catch((error) => {
+    const digestPromise = (FREE_HOSTING ? Promise.resolve(null) : this.tryFetchDigest()).catch((error) => {
       console.warn('[News] Digest fetch failed before category load:', error);
       return null;
     });
@@ -3499,8 +3516,8 @@ export class DataLoaderManager implements AppModule {
   async loadNatural(): Promise<void> {
     const [earthquakeResult, eonetResult, imdResult] = await Promise.allSettled([
       fetchEarthquakes(),
-      fetchNaturalEvents(30),
-      this.loadImdCycloneMarine(),
+      FREE_HOSTING ? Promise.resolve([]) : fetchNaturalEvents(30),
+      FREE_HOSTING ? Promise.resolve({ cycloneEvents: [], coverageState: 'disabled' as const }) : this.loadImdCycloneMarine(),
     ]);
 
     if (earthquakeResult.status === 'fulfilled') {
