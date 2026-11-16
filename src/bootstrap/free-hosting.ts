@@ -2,7 +2,7 @@ import { FREE_HOSTING } from '@/config/free-hosting';
 
 if (FREE_HOSTING) {
   const style = document.createElement('style');
-  style.textContent = '.pro-banner-slot,#missionPresetMount{display:none!important}';
+  style.textContent = '.pro-banner-slot,#missionPresetMount{display:none!important}@media(max-width:768px){#free-hosting-notice{bottom:calc(66px + env(safe-area-inset-bottom,0px))!important}}';
   document.head.append(style);
   const notice = document.createElement('aside');
   notice.id = 'free-hosting-notice';
